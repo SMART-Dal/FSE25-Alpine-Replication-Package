@@ -1,0 +1,166 @@
+# The MIT License (MIT)
+
+# Copyright (C) 2021-2023 ExplosionAI GmbH
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+import math
+from enum import Enum, EnumMeta
+from typing import Type
+
+import torch
+from torch import Tensor
+from torch.nn import Module
+
+
+class _ActivationMeta(EnumMeta):
+    """
+    ``Enum`` metaclass to override the class ``__call__`` method with a more
+    fine-grained exception for unknown activation functions.
+    """
+
+    def __call__(
+        cls,
+        value,
+        names=None,
+        *,
+        module=None,
+        qualname=None,
+        type=None,
+        start=1,
+    ):
+        # Wrap superclass __call__ to give a nicer error message when
+        # an unknown activation is used.
+        if names is None:
+            try:
+                return EnumMeta.__call__(
+                    cls,
+                    value,
+                    names,
+                    module=module,
+                    qualname=qualname,
+                    type=type,
+                    start=start,
+                )
+            except ValueError:
+                supported_activations = ", ".join(sorted(v.value for v in cls))
+                raise ValueError(
+                    f"Invalid activation function `{value}`. "
+                    f"Supported functions: {supported_activations}"
+                )
+        else:
+            return EnumMeta.__call__(cls, value, names, module, qualname, type, start)
+
+
+class Activation(Enum, metaclass=_ActivationMeta):
+    """
+    Activation functions.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
+    .. _Hendrycks et al., 2016: https://arxiv.org/abs/1606.08415
+    .. _Fukushima, 1969: https://ieeexplore.ieee.org/document/4082265
+    """
+
+    #: Rectified Linear Unit (`Fukushima, 1969`_).
+    ReLU = "relu"
+
+    #: Gaussian Error Linear Unit (`Hendrycks et al., 2016`_).
+    GELU = "gelu"
+
+    #: Gaussian Error Linear Unit (`Hendrycks et al., 2016`_) approximation
+    #: used by GPT-NeoX (`Black et al., 2022`_).
+    GELUFast = "gelu_fast"
+
+    #: Gaussian Error Linear Unit (`Hendrycks et al., 2016`_) approximation.
+    GELUNew = "gelu_new"
+
+    #: Sigmoid Linear Unit (`Hendrycks et al., 2016`_).
+    SiLU = "silu"
+
+    @property
+    def module(self) -> Type[torch.nn.Module]:
+        """
+        Get the PyTorch module for the activation function.
+        """
+
+        # TODO: convert to match when Python 3.10 is the minimum version.
+        if self == Activation.ReLU:
+            return torch.nn.ReLU
+        elif self == Activation.GELU:
+            return torch.nn.GELU
+        elif self == Activation.GELUFast:
+            return GELUFast
+        elif self == Activation.GELUNew:
+            return GELUNew
+        elif self == Activation.SiLU:
+            return torch.nn.SiLU
+        else:
+            raise NotImplementedError
+
+
+class GELUNew(Module):
+    """
+    GELU (`Hendrycks et al., 2016`_) approximation, called ``gelu_new`` in many transformer models.
+
+    .. _Hendrycks et al., 2016: https://arxiv.org/abs/1606.08415
+    """
+
+    def forward(self, input: Tensor) -> Tensor:
+        """
+        Apply the GELU activation on the input.
+
+        :param input:
+            Input tensor.
+
+            *Shape:* ``(batch_size, seq_len, width)``
+        """
+        return (
+            0.5
+            * input
+            * (
+                1.0
+                + torch.tanh(
+                    math.sqrt(2.0 / math.pi)
+                    * (input + 0.044715 * torch.pow(input, 3.0))
+                )
+            )
+        )
+
+
+class GELUFast(Module):
+    """
+    GELU (`Hendrycks et al., 2016`_) approximation used by GPT-NeoX (`Black et al., 2022`_).
+
+    .. _Hendrycks et al., 2016: https://arxiv.org/abs/1606.08415
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
+    """
+
+    def forward(self, input: Tensor) -> Tensor:
+        """
+        Apply the GELU activation on the input.
+
+        :param input:
+            Input tensor.
+
+            *Shape:* ``(batch_size, seq_len, width)``
+        """
+        alpha = math.sqrt(2.0 / math.pi)
+        beta = 0.044715
+
+        return 0.5 * input * (1.0 + torch.tanh(alpha * (input + beta * input.pow(3))))

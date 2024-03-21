@@ -1,0 +1,13 @@
+﻿GPU Memory,Model,Task,Pruning
+462.42,CodeBERT,VD,All Layers
+1650,CodeBERT,VD,No Pruning
+1840,GraphCodeBERT,VD,No Pruning
+612.87,GraphCodeBERT,VD,All Layers
+714.18,UniXCoder,VD,All Layers
+1770,UniXCoder,VD,No Pruning
+916.55,UniXCoder,CD,All Layers
+1760,UniXCoder,CD,No Pruning
+748.77,GraphCodeBERT,CD,All Layers
+1730,GraphCodeBERT,CD,No Pruning
+1510,CodeBERT,CD,No Pruning
+820.18,CodeBERT,CD,All Layers
