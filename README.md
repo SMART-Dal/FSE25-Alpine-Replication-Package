@@ -71,7 +71,8 @@ The argument `layers` specifies the layers where ALPINE will be added.
 |   `none`    |  No layer will have ALPINE.           |
 |   `all`    |   All layers will have ALPINE enabled.          |
 |    `odd`   |    Only odd-indexed layers will have ALPINE.         |
-|    `even`   |    Only even-indexed layers will have ALPINE.         |
+|    `even`   |    Only even-indexed layers will have ALPINE.         |  
+
 The `model_name` argument specifies the language model of code to be fine-tuned. We use model weights that are available on the Huggingface Hub.  
 
 | Value | Description |
@@ -94,7 +95,8 @@ The `task` argument specifies which SE was the model fine-tuned on
 | Value | Description |
 |-------|-------------|
 |   `defect_pred`    | Defect prediction (Devign dataset).         |
-|   `code_clone`    | Code clone detection (BigCloneBenchmark dataset).         |
+|   `code_clone`    | Code clone detection (BigCloneBenchmark dataset).         |  
+
 The `model_name` argument is the same as the one mentioned above for fine-tuning instructions.
 # Results
 
@@ -131,12 +133,12 @@ Odd index = [1, 3, 5, 7, 9, 11]
 
 ### Fine-tuning times
 <div style="display:flex;">
-<figure style="width:100%">
+<figure style="width:45%">
 <img src="./figures/a100_training_time-1.png" alt="Image 1" style="width:100%">
 <figcaption>NVIDIA A100</figcaption>
 </figure>
   &nbsp;
-  <figure style="width:100%">
+  <figure style="width:45%">
   <img src="./figures/rtx_training_time-1.png" alt="Image 2" style="width:100%">
 <figcaption>NVIDIA RTX2080</figcaption>
 </figure>
