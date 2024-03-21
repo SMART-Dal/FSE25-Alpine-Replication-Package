@@ -1,4 +1,4 @@
-python3 train.py \
+python3 train_bcb.py \
 	--do_train \
 	--epoch 5 \
 	--train_batch_size 32 \
@@ -8,6 +8,5 @@ python3 train.py \
 	--evaluate_during_training \
 	--seed 123456 \
 	--alpha 1. \
-	--layers even_idx \
-	--model_name microsoft/unixcoder-base \
-# layers: even_idx, odd_idx, all, none
+	--layers none \
+	--model_name microsoft/graphcodebert-base \

@@ -165,7 +165,6 @@ def train(args, model, tokenizer):
                     else:
                         logger.info("Model checkpoint are not saved")
 
-    results["best_eval_acc"] = best_acc
     return results
 
 
@@ -289,7 +288,6 @@ def main():
     # Prepare dataset and dataloaders
     dataset = Devign(root='./data/devign', transform=None)
     args.train_dp, args.val_dp = dataset.train, dataset.test
-
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     encoder = PrunableModel.from_hf_hub(

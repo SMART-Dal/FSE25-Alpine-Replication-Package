@@ -1,4 +1,4 @@
-python3 scripts/flops_analysis.py \
+python3 flops_analysis.py \
         --checkpoint ... \
         --task ... \
         --model_name microsoft/codebert-base \

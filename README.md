@@ -22,24 +22,80 @@ contributing to the overall sustainability of adopting language models in softwa
     - `bcb_classifier.py`: Contains a classification head on top of `PrunableModel` for the code clone detection task.
     - `utils.py`: Holds the implementation of utility functions. Notably, the `repack_tensor_and_create_mask` function (referred to `RepackTensor` in Algorithm 2 in the paper), that completely removes tokens from the output of the MHA, or mereges them.
 - `extracted_data`:
-    - ...
+    - `bcb`: Contains the average sequence length when progressing throughout the layers of the pruned models fine-tuned on the BigCloneBenchmark dataset.
+    - `devign`: Contains the average sequence length when progressing throughout the layers of the pruned models fine-tuned on the Devign dataset.
+    - `gpu_mem_cons.xlsx`: Excel file that contains the results of memory consumption of all models across the three tasks.
+    - `impact_token_merging.xlsx`: Results of the ablation study that investigates the impact of token merging.
+    - `running_time.xlsx`: Duration of fine-tuning each model on each task when using ALPINE versus when pruning is not used.
 - `notebooks`:
-    - ...
+    - `GPU_Memory_Consumption.ipynb`: Jupyter notebook used to draw the barplot for GPU memory consumption.
+    - `running_time.ipynb`: Jupyter notebook used to draw the barplot for fine-tuning time.
+    - `theoretical_flops_analysis.ipynb`: This is used to plot the FLOPs counting formulae of the MHA and FFNN layers.
+    - `visualize_sequences.ipynb`: Plots the sequence lengths progression for pruned and non-pruned models. It uses the data located in the `extract_data` folder.
 - `scripts`:
-    - ...
+    - `train_*.py`: Training script for defect prediction and code clone detection.
+    - `speed_test.py`: Calculates the throughput of a model using using the test set.
+    - `flops_analysis.py`: Calculates the number of FLOPs of a model.
+    
 
 # Dependencies
 This work uses `polp`, a library for source code intelligence. Currently, it is under development, but it does include all models that were used in this study.
-```
+```bash
 pip3 install -e lib
 ```
 The remaining dependencies are installed using,
 
-```
+```bash
 pip3 install -r requirements.txt
 ```
 
-# Running
+# Running and Analysis
+To fine-tune the models using the different pruning strategies, execute the following command:
+```bash
+python3 train.py \
+	--do_train \
+	--epoch 5 \
+	--train_batch_size 32 \
+	--eval_batch_size 64 \
+	--learning_rate 2e-5 \
+	--max_grad_norm 1.0 \
+	--evaluate_during_training \
+	--seed 123456 \
+	--alpha 1. \
+	--layers {PRUNING-STRAT} \
+	--model_name {MODEL} \
+```
+The argument `layers` specifies the layers where ALPINE will be added.
+| Value | Description |
+|-------|-------------|
+|   `none`    |  No layer will have ALPINE.           |
+|   `all`    |   All layers will have ALPINE enabled.          |
+|    `odd`   |    Only odd-indexed layers will have ALPINE.         |
+|    `even`   |    Only even-indexed layers will have ALPINE.         |
+The `model_name` argument specifies the language model of code to be fine-tuned. We use model weights that are available on the Huggingface Hub.  
+
+| Value | Description |
+|-------|-------------|
+|   `microsoft/codebert-base`    | CodeBERT.           |
+|   `microsoft/graphcodebert-base`    | GraphCodeBERT.           |
+|   `microsoft/unixcoder-base`    | UniXCoder.           |
+
+Once the fine-tuning process is finished, a checkpoint of the model where it has performed the best across the epochs will be saved.  This checkpoint file will be used for the scripts below.  
+
+Both `flops_analysis.py` and `speed_test.py` share the same set of arguments,
+```bash
+python3 {flops_analysis.py|speed_test.py} \
+        --checkpoint ... \
+        --task {TASK} \
+        --model_name {MODEL} \
+        --eval_batch_size 1 \
+```
+The `task` argument specifies which SE was the model fine-tuned on
+| Value | Description |
+|-------|-------------|
+|   `defect_pred`    | Defect prediction (Devign dataset).         |
+|   `code_clone`    | Code clone detection (BigCloneBenchmark dataset).         |
+The `model_name` argument is the same as the one mentioned above for fine-tuning instructions.
 # Results
 
 **NB**: 
@@ -52,9 +108,6 @@ Odd index = [1, 3, 5, 7, 9, 11]
 
 ### Code Clone Detection (BigCloneBenchmark Dataset)
 ![](./figures/code_clone_detection_results-1.png)
-
-### Memory Footprint
-![](./figures/gpu_mem_footprint-1.png)
 
 ### Token Reduction
 #### Defect Prediction (Devign Dataset)
@@ -71,4 +124,23 @@ Odd index = [1, 3, 5, 7, 9, 11]
   <img src="./figures/ccd_unixcoder_bcb-1.png" alt="Image 3" width="30%">
 </div>
 
+### Memory Footprint
+![](./figures/gpu_mem_footprint-1.png)
+
 ## Role of GPU and Impact of Carbon Emission
+
+### Fine-tuning times
+<div style="display:flex;">
+<figure style="width:100%">
+<img src="./figures/a100_training_time-1.png" alt="Image 1" style="width:100%">
+<figcaption>NVIDIA A100</figcaption>
+</figure>
+  &nbsp;
+  <figure style="width:100%">
+  <img src="./figures/rtx_training_time-1.png" alt="Image 2" style="width:100%">
+<figcaption>NVIDIA RTX2080</figcaption>
+</figure>
+</div>
+
+### CO2 Emissions Reduction
+![](./figures/co2_emissions-1.png)
