@@ -13,6 +13,35 @@ Our experiments on two software engineering tasks, _defect prediction_ and _code
 These findings highlight the potential of ALPINE in making language models of code more resource-efficient and accessible while preserving their performance,
 contributing to the overall sustainability of adopting language models in software development.
 
+# Analytical Proof on FLOPs Bounds of the MHA and FFNN
+
+We provide an analytical proof that demonstrates that the number of floating points operations performed in the FFNN layer is higher than the MHA's for all input lengths that fit within the maximum context length of the language models used in the study.  
+
+**Lemma**. For every conceivable input sequence that fits into the context length of CodeBERT, GraphCodeBERT, and UnixCoder, it holds that $$F_{FFN} > {F_{MHA}}.$$
+
+Let us fix $d:=d_{MHA}>0$, $h>0$ and consider the following function:
+
+$$f(n) = F_{FFN}(n) - F_{MHA}(n) = n(8d^2 +3d) - n^2(4d+h)$$
+
+This function
+
+-   is quadratic
+
+-   has a maximum $(f''(n) <0)$.
+
+-   has two roots $n_1=0$ and $n_2=\frac{8d^2 +3d}{4d + h}$
+
+therefore $f(n)>0$ or $F_{FFN} > F_{MHA}$ when $n\in(0,n_2)$.  
+
+In other words, if the sequence length
+$n\leq\lfloor \frac{8d^2 +3d}{4d + h} \rfloor$, then $F_{FFN} > F_{MHA}$
+
+For UnixCoder, GraphCodeBERT, and CodeBERT, the maximum sequence lengths are $1024$, $512$, and $512$, respectively. Additionally, in those cases we have that $d=768$ and $h=12$, then we can infer the following:
+
+$$\left\lfloor \frac{8d^2 +3d}{4d + h} \right\rfloor = 1375$$
+
+In these models, it will consistently hold true that $n < \lfloor \frac{8d^2 +3d}{4d + h} \rfloor$, hence, $F_{FFN} > F_{MHA}$.
+
 # Folder structure
 - `pruning`: folder that contains the RoBERTa-based model that supports pruning, including the training script.  
     - `AttenPruner.py`: contains the implementation of `IQPruner layer`. It takes as input the attention probabilities of each attention head and, final output of the MHA and the attention mask. First, it takes the mean across all heads and tokens to obtain a score distribution. Then, it creates a new mask that indicate the tok
@@ -134,12 +163,12 @@ Odd index = [1, 3, 5, 7, 9, 11]
 ### Fine-tuning times
 <div style="display:flex;">
 <figure style="width:45%">
-<img src="./figures/a100_training_time-1.png" alt="Image 1" style="width:100%">
+<img src="./figures/a100_training_time-1.png" alt="Image 1" style="width:45%">
 <figcaption>NVIDIA A100</figcaption>
 </figure>
   &nbsp;
   <figure style="width:45%">
-  <img src="./figures/rtx_training_time-1.png" alt="Image 2" style="width:100%">
+  <img src="./figures/rtx_training_time-1.png" alt="Image 2" style="width:45%">
 <figcaption>NVIDIA RTX2080</figcaption>
 </figure>
 </div>
