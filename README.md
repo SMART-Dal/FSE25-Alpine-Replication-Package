@@ -1,4 +1,4 @@
-# The Less I know the Greener: An adaptive language-agnostic pruning method for language models for code 
+# An adaptive language-agnostic pruning method for greener language models for code
 
 ![](./figures/overview.png)
 
